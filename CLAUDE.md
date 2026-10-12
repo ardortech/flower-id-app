@@ -81,8 +81,8 @@ Tell Claude to write warmly and simply, for an older reader, with no jargon. If 
 zh-TW only for now, English later. All UI strings live in `src/locales/zh-TW.json`; no hard-coded text in components. Pass `lang` to the backend.
 
 ## Build order
-- [ ] 1. Scaffold Vite app, PWA manifest + icons, Netlify config, locale file
-- [ ] 2. Home + album picker + Loading + Result screens with `MOCK_IDENTIFY=1`
+- [x] 1. Scaffold Vite app, PWA manifest + icons, Netlify config, locale file
+- [x] 2. Home + album picker + Loading + Result screens with `MOCK_IDENTIFY=1`
 - [ ] 3. Real Netlify Function: resize → Pl@ntNet → Claude → JSON
 - [ ] 4. Low-confidence screen (top 3)
 - [ ] 5. Diary (IndexedDB) + Save to album

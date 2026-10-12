@@ -1,0 +1,56 @@
+{
+  "app": {
+    "name": "花花世界",
+    "nameSub": "Flower ID",
+    "title": "花花世界 Flower ID"
+  },
+  "home": {
+    "greeting": "看到漂亮的花嗎？",
+    "intro": "選一張花的照片，我來告訴你它叫什麼名字。",
+    "pickFromAlbum": "從相簿選照片",
+    "pickHint": "先用相機拍好，再從這裡選",
+    "takePhoto": "現在拍照",
+    "recentTitle": "最近認識的花",
+    "recentEmpty": "認識過的花會出現在這裡。"
+  },
+  "loading": {
+    "title": "正在認識這朵花…",
+    "hint": "大約需要幾秒鐘，請稍等。",
+    "cancel": "取消",
+    "photoAlt": "你選的花朵照片"
+  },
+  "result": {
+    "back": "回首頁",
+    "photoAlt": "你拍的花朵照片",
+    "confidenceHigh": "很有把握",
+    "confidenceMedium": "應該是",
+    "confidenceLow": "不太確定",
+    "confidenceValue": "{label} {percent}%",
+    "aliases": "也叫做：{names}",
+    "aliasSeparator": "、",
+    "identifiedAt": "{date}",
+    "infoTitle": "認識這朵花",
+    "fields": {
+      "family": "科別",
+      "floweringSeason": "開花季節",
+      "origin": "老家在哪裡",
+      "howToRecognize": "怎麼認出它",
+      "flowerMeaning": "花語",
+      "careTips": "怎麼照顧",
+      "whereInTaiwan": "在台灣哪裡看得到"
+    },
+    "toxicityTitle": "要小心",
+    "again": "再認識一朵花",
+    "disclaimer": "辨識結果僅供參考，請勿據此判斷能否食用",
+    "attribution": "辨識技術：Pl@ntNet"
+  },
+  "error": {
+    "noPlantTitle": "這張不太好認",
+    "noPlant": "看不太清楚，靠近花朵再拍一次",
+    "generalTitle": "出了一點問題",
+    "general": "現在沒辦法認識這朵花，請稍後再試一次。",
+    "offline": "好像沒有連上網路，請檢查網路後再試一次。",
+    "tryAgain": "再選一張照片",
+    "home": "回首頁"
+  }
+}
