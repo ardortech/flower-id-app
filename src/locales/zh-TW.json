@@ -31,6 +31,8 @@
     "aliases": "又叫：{names}",
     "aliasSeparator": "、",
     "identifiedAt": "{date}",
+    "noPlace": "未記錄地點",
+    "placeFinding": "正在記錄地點…",
     "fields": {
       "family": "科屬",
       "floweringSeason": "花期",
@@ -48,7 +50,8 @@
     "again": "再認識一朵花",
     "disclaimer": "辨識結果僅供參考，請勿據此判斷能否食用",
     "attribution": "辨識技術：Pl@ntNet",
-    "others": "不太像？看看其他可能"
+    "others": "不太像？看看其他可能",
+    "placeAttribution": "地點資料：© OpenStreetMap 貢獻者"
   },
   "error": {
     "noPlantTitle": "這張不太好認",
@@ -77,5 +80,15 @@
     "count": "已經認識 {count} 種花",
     "noPlace": "未記錄地點",
     "empty": "還沒有認識的花。認識一朵花之後，按「加入我的花朵日記」，就會出現在這裡。"
+  },
+  "place": {
+    "askTitle": "這張是在這裡拍的嗎？",
+    "askText": "照片裡沒有地點。如果是在你現在的地方拍的，可以記下這裡。",
+    "here": "是",
+    "type": "輸入地點",
+    "skip": "略過",
+    "typeTitle": "在哪裡拍的？",
+    "typePlaceholder": "例如：大安森林公園",
+    "typeDone": "好了"
   }
 }
