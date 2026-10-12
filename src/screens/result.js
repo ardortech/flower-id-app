@@ -35,8 +35,42 @@ export function backBar(onBack) {
   );
 }
 
+// 「加入我的花朵日記」. onSave() returns a promise; once it resolves the button
+// turns into a quiet 「已加入」 so the same flower isn't saved twice.
+function saveButton(saved, onSave) {
+  const status = h('p', { class: 'save-status', role: 'status' });
+  const button = h('button', { type: 'button', class: 'btn btn-primary' });
+  const showSaved = () => {
+    button.className = 'btn btn-saved';
+    button.setAttribute('aria-disabled', 'true');
+    button.replaceChildren(icon(icons.check), t('result.saved'));
+  };
+  if (saved) showSaved();
+  else button.replaceChildren(t('result.save'));
+
+  let busy = false;
+  button.addEventListener('click', async () => {
+    if (saved || busy) return;
+    busy = true;
+    status.textContent = '';
+    try {
+      await onSave();
+      saved = true;
+      showSaved();
+    } catch (err) {
+      console.warn('diary save failed', err);
+      status.textContent = t('result.saveFailed');
+    } finally {
+      busy = false;
+    }
+  });
+  return [button, status];
+}
+
 // onOthers is set when there are other candidates to compare (「不太像？看看其他可能」).
-export function resultScreen({ result, photoUrl, takenAt, place, onBack, onAgain, onOthers }) {
+// onSave adds this flower to the diary (saved: already there). onShare is set only
+// for photos taken in the app, which aren't in her album yet (「存到相簿」).
+export function resultScreen({ result, photoUrl, takenAt, place, saved, onSave, onShare, onBack, onAgain, onOthers }) {
   const { info = {}, confidence = 0 } = result;
   const aliases = (info.aliases || []).filter(Boolean);
   const tableFields = TABLE_FIELDS.filter((key) => info[key]);
@@ -79,7 +113,9 @@ export function resultScreen({ result, photoUrl, takenAt, place, onBack, onAgain
     h(
       'div',
       { class: 'result-actions' },
-      h('button', { type: 'button', class: 'btn btn-primary', onClick: onAgain }, t('result.again')),
+      saveButton(saved, onSave),
+      onShare && h('button', { type: 'button', class: 'btn btn-outline', onClick: onShare }, icon(icons.download), t('result.saveToAlbum')),
+      onAgain && h('button', { type: 'button', class: 'btn btn-green', onClick: onAgain }, t('result.again')),
       onOthers &&
         h('button', { type: 'button', class: 'link-button', onClick: onOthers }, t('result.others'), icon(icons.forward))
     ),

@@ -8,8 +8,12 @@ import { loadingScreen } from './screens/loading.js';
 import { resultScreen } from './screens/result.js';
 import { errorScreen } from './screens/error.js';
 import { candidatesScreen } from './screens/candidates.js';
+import { diaryScreen } from './screens/diary.js';
+import { addEntry, getEntry, listEntries, countKinds } from './diary.js';
+import { photoFile, canSharePhoto, sharePhoto } from './share.js';
 
 const LOW_CONFIDENCE = 0.5;
+const RECENT_COUNT = 3;
 
 document.title = t('app.title');
 
@@ -43,11 +47,36 @@ let nextSessionId = 1;
 // Screens below Home are history entries, so the back button / swipe-back walks
 // back through them: { screen, sid, depth, pick?, viaList?, overResult? }.
 // depth counts entries above Home; sid ties an entry to its session.
+// Diary screens don't belong to a session: { screen: 'diary' | 'entry', depth, id? }.
 
-function show(screen) {
+// Object URLs for diary photos on the current screen, freed when it goes away.
+let viewUrls = [];
+// Bumped on every show(), so a screen still loading from IndexedDB can tell
+// she has already moved on.
+let viewSeq = 0;
+
+function show(screen, urls = []) {
+  viewSeq++;
+  for (const url of viewUrls) URL.revokeObjectURL(url);
+  viewUrls = urls;
   app.replaceChildren(screen);
   window.scrollTo(0, 0);
 }
+
+// Loads diary entries for a screen; returns null if she left before they arrived.
+async function loadForScreen(load) {
+  const seq = viewSeq;
+  let data;
+  try {
+    data = await load();
+  } catch (err) {
+    console.warn('diary read failed', err);
+    data = undefined;
+  }
+  return seq === viewSeq ? { data } : null;
+}
+
+const withUrls = (entries) => entries.map((entry) => ({ entry, url: URL.createObjectURL(entry.photo) }));
 
 function abortRequest() {
   request?.abort();
@@ -60,9 +89,21 @@ function reset() {
   session = null;
 }
 
-function showHome() {
+async function showHome() {
   reset();
-  show(homeScreen({ onPickAlbum: pickAlbum, onTakePhoto: takePhoto }));
+  const loaded = await loadForScreen(listEntries);
+  if (!loaded) return;
+  const recent = withUrls((loaded.data || []).slice(0, RECENT_COUNT));
+  show(
+    homeScreen({
+      onPickAlbum: pickAlbum,
+      onTakePhoto: takePhoto,
+      recent,
+      onOpenDiary: () => go({ screen: 'diary', depth: 1 }),
+      onOpenEntry: (id) => go({ screen: 'entry', id, depth: 1 }),
+    }),
+    recent.map((item) => item.url)
+  );
 }
 
 function goHome() {
@@ -80,6 +121,12 @@ function navigate(state, replace = false) {
   render(full);
 }
 
+// Push a diary screen (not tied to a photo session).
+function go(state) {
+  history.pushState(state, '');
+  render(state);
+}
+
 window.addEventListener('popstate', () => {
   abortRequest();
   render(history.state);
@@ -87,6 +134,8 @@ window.addEventListener('popstate', () => {
 
 function render(state) {
   if (!state?.screen) return showHome();
+  if (state.screen === 'diary') return showDiary(state);
+  if (state.screen === 'entry') return showEntry(state);
   // An entry left over from an earlier photo, or a loading screen she already left.
   if (!session || state.sid !== session.id || state.screen === 'loading') return goHome();
   if (state.screen === 'candidates') return showCandidates(state);
@@ -119,17 +168,74 @@ function showResult(state) {
   if (session.candidates.length > 1) {
     onOthers = state.viaList ? goBack : () => navigate({ screen: 'candidates', overResult: true, depth: state.depth + 1 });
   }
+  const current = session;
   show(
     resultScreen({
       result,
-      photoUrl: session.photoUrl,
-      takenAt: session.takenAt,
+      photoUrl: current.photoUrl,
+      takenAt: current.takenAt,
       place: null,
-      source: session.source,
+      saved: current.saved[pick] != null,
+      onSave: async () => {
+        current.saved[pick] = await addEntry({
+          photo: current.photo,
+          result: { confidence: result.confidence, info: result.info, candidates: current.candidates },
+          takenAt: current.takenAt,
+          source: current.source,
+        });
+      },
+      onShare: shareAction(current.source, current.photo),
       onBack: goBack,
       onAgain: pickAlbum,
       onOthers,
     })
+  );
+}
+
+// 「存到相簿」 only for photos taken in the app: album photos are already in Photos.
+function shareAction(source, photo) {
+  if (source !== 'camera') return null;
+  const file = photoFile(photo);
+  return canSharePhoto(file) ? () => sharePhoto(file) : null;
+}
+
+async function showDiary(state) {
+  const loaded = await loadForScreen(listEntries);
+  if (!loaded) return;
+  const entries = loaded.data || [];
+  const items = withUrls(entries);
+  show(
+    diaryScreen({
+      items,
+      kinds: countKinds(entries),
+      onBack: goBack,
+      onOpen: (id) => go({ screen: 'entry', id, depth: state.depth + 1 }),
+      onPickAlbum: pickAlbum,
+    }),
+    items.map((item) => item.url)
+  );
+}
+
+// A flower from the diary, shown with the same result screen.
+async function showEntry(state) {
+  const loaded = await loadForScreen(() => getEntry(state.id));
+  if (!loaded) return;
+  const entry = loaded.data;
+  if (!entry) return goHome();
+  const photoUrl = URL.createObjectURL(entry.photo);
+  show(
+    resultScreen({
+      result: entry.result,
+      photoUrl,
+      takenAt: new Date(entry.takenAt),
+      place: entry.place?.name || null,
+      saved: true,
+      onShare: shareAction(entry.source, entry.photo),
+      onBack: goBack,
+      onAgain: pickAlbum,
+      onOthers: null,
+    }),
+    [photoUrl]
   );
 }
 
@@ -168,6 +274,7 @@ async function startIdentify(file, source) {
     source,
     candidates: [],
     results: [],
+    saved: [], // saved[i]: diary entry id once results[i] is in the diary
   };
 
   // Reuse the current entry if we're already past Home; entries below it belong
@@ -201,4 +308,5 @@ function navigateLoading(depth) {
   show(loadingScreen({ photoUrl: session.photoUrl, onCancel: goHome }));
 }
 
-showHome();
+// Start where history says (e.g. the diary after a reload); session screens fall back to Home.
+render(history.state);
