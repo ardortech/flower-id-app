@@ -20,5 +20,7 @@ export const icons = {
   ),
   // Filled five-petal flower for the header, echoing the app icon.
   logo: `<svg viewBox="0 0 24 24"><g fill="currentColor"><circle cx="12" cy="6.2" r="4" transform="rotate(0 12 12)"/><circle cx="12" cy="6.2" r="4" transform="rotate(72 12 12)"/><circle cx="12" cy="6.2" r="4" transform="rotate(144 12 12)"/><circle cx="12" cy="6.2" r="4" transform="rotate(216 12 12)"/><circle cx="12" cy="6.2" r="4" transform="rotate(288 12 12)"/></g><circle cx="12" cy="12" r="2.6" fill="#fff"/></svg>`,
+  download: svg('<path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/>'),
+  check: svg('<path d="m5 12.5 4.5 4.5L19 7"/>'),
   refresh: svg('<path d="M20 12a8 8 0 1 1-2.3-5.7L20 8.5"/><path d="M20 4v4.5h-4.5"/>'),
 };

@@ -1,8 +1,10 @@
 import { h, icon } from '../dom.js';
 import { icons } from '../icons.js';
 import { t } from '../i18n.js';
+import { diaryTile } from './diary.js';
 
-export function homeScreen({ onPickAlbum, onTakePhoto }) {
+// recent: the newest diary entries as [{ entry, url }] (at most 3).
+export function homeScreen({ onPickAlbum, onTakePhoto, recent = [], onOpenEntry, onOpenDiary }) {
   return h(
     'section',
     { class: 'screen screen-home' },
@@ -42,9 +44,20 @@ export function homeScreen({ onPickAlbum, onTakePhoto }) {
     h(
       'section',
       { class: 'recent', 'aria-labelledby': 'recent-title' },
-      h('div', { class: 'section-head' }, h('h2', { id: 'recent-title' }, t('home.recentTitle'))),
-      // Diary (step 5) fills this strip; until then show the empty state.
-      h('div', { class: 'recent-empty' }, icon(icons.flower, 'icon icon-lg'), h('p', {}, t('home.recentEmpty')))
+      h(
+        'div',
+        { class: 'section-head' },
+        h('h2', { id: 'recent-title' }, t('home.recentTitle')),
+        recent.length > 0 &&
+          h('button', { type: 'button', class: 'see-all', onClick: onOpenDiary }, t('home.seeAll'), icon(icons.forward))
+      ),
+      recent.length > 0
+        ? h(
+            'ul',
+            { class: 'tile-strip' },
+            recent.map((item) => diaryTile({ ...item, onOpen: () => onOpenEntry(item.entry.id) }))
+          )
+        : h('div', { class: 'recent-empty' }, icon(icons.flower, 'icon icon-lg'), h('p', {}, t('home.recentEmpty')))
     ),
     h(
       'footer',
