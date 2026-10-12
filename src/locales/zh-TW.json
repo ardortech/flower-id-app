@@ -42,7 +42,8 @@
     "toxicityTitle": "要小心",
     "again": "再認識一朵花",
     "disclaimer": "辨識結果僅供參考，請勿據此判斷能否食用",
-    "attribution": "辨識技術：Pl@ntNet"
+    "attribution": "辨識技術：Pl@ntNet",
+    "others": "不太像？看看其他可能"
   },
   "error": {
     "noPlantTitle": "這張不太好認",
@@ -52,5 +53,18 @@
     "offline": "好像沒有連上網路，請檢查網路後再試一次。",
     "tryAgain": "再選一張照片",
     "home": "回首頁"
+  },
+  "candidates": {
+    "title": "可能是這幾種",
+    "subtitle": "比對看看，哪一個最像？",
+    "photoAlt": "你拍的花朵照片",
+    "referenceAlt": "{name}的參考照片",
+    "score": "相似度 {percent}%",
+    "pick": "就是{name}",
+    "pickUnnamed": "就是這一種",
+    "noneTitle": "都不像？",
+    "noneTip": "靠近一點，讓花在畫面中間，再拍一張。",
+    "retake": "再拍一張",
+    "attribution": "參考照片與辨識技術：Pl@ntNet"
   }
 }

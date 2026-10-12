@@ -35,7 +35,8 @@ export function backBar(onBack) {
   );
 }
 
-export function resultScreen({ result, photoUrl, takenAt, place, onHome, onAgain }) {
+// onOthers is set when there are other candidates to compare (「不太像？看看其他可能」).
+export function resultScreen({ result, photoUrl, takenAt, place, onBack, onAgain, onOthers }) {
   const { info = {}, confidence = 0 } = result;
   const aliases = (info.aliases || []).filter(Boolean);
   const tableFields = TABLE_FIELDS.filter((key) => info[key]);
@@ -43,7 +44,7 @@ export function resultScreen({ result, photoUrl, takenAt, place, onHome, onAgain
   return h(
     'section',
     { class: 'screen screen-result' },
-    backBar(onHome),
+    backBar(onBack),
     h('div', { class: 'result-photo' }, h('img', { src: photoUrl, alt: t('result.photoAlt') })),
     h(
       'div',
@@ -78,7 +79,9 @@ export function resultScreen({ result, photoUrl, takenAt, place, onHome, onAgain
     h(
       'div',
       { class: 'result-actions' },
-      h('button', { type: 'button', class: 'btn btn-primary', onClick: onAgain }, t('result.again'))
+      h('button', { type: 'button', class: 'btn btn-primary', onClick: onAgain }, t('result.again')),
+      onOthers &&
+        h('button', { type: 'button', class: 'link-button', onClick: onOthers }, t('result.others'), icon(icons.forward))
     ),
     h(
       'footer',

@@ -1,7 +1,10 @@
-// POST /api/identify — multipart form: image, lang, optional lat/lng.
-// Step 2: only the MOCK_IDENTIFY path exists. Step 3 adds resize → Pl@ntNet → Claude.
+// POST /api/identify — multipart form: image, lang, optional lat/lng, optional species.
+// Without species: identify the photo → { confidence, candidates, info }.
+// With species (a candidate's scientificName, sent after she taps 「就是 X」):
+// skip Pl@ntNet and describe that species → { info }.
+// Only the MOCK_IDENTIFY path exists so far. Step 3 adds resize → Pl@ntNet → Claude.
 
-import { mockResult } from '../lib/mock-result.js';
+import { mockResult, mockLowResult, mockInfo } from '../lib/mock-result.js';
 
 const ACCEPTED_TYPES = new Set(['image/jpeg', 'image/png', 'image/heic', 'image/heif']);
 
@@ -31,10 +34,20 @@ export default async (req) => {
     return json({ error: 'unsupported_type' }, 415);
   }
 
+  const species = form.get('species');
+  if (species != null && (typeof species !== 'string' || !species.trim() || species.length > 200)) {
+    return json({ error: 'bad_species' }, 400);
+  }
+
   const mock = process.env.MOCK_IDENTIFY;
   if (mock) {
     await sleep(Number(process.env.MOCK_DELAY_MS ?? 1500));
+    if (species) {
+      const info = mockInfo[species];
+      return info ? json({ info }) : json({ error: 'unknown_species' }, 404);
+    }
     if (mock === 'no_plant') return json({ error: 'no_plant' }, 422);
+    if (mock === 'low') return json(mockLowResult);
     return json(mockResult);
   }
 
