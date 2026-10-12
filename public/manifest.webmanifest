@@ -1,0 +1,16 @@
+{
+  "name": "花花世界 Flower ID",
+  "short_name": "花花世界",
+  "description": "拍下花朵，認識它的名字和故事。",
+  "lang": "zh-TW",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F5F7F2",
+  "theme_color": "#F5F7F2",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
