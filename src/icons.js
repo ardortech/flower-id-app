@@ -17,5 +17,7 @@ export const icons = {
   flower: svg(
     '<circle cx="12" cy="12" r="2.5"/><path d="M12 9.5c-1.8-2.2-1.8-5.5 0-6.5 1.8 1 1.8 4.3 0 6.5Z" transform="rotate(0 12 12)"/><path d="M12 9.5c-1.8-2.2-1.8-5.5 0-6.5 1.8 1 1.8 4.3 0 6.5Z" transform="rotate(72 12 12)"/><path d="M12 9.5c-1.8-2.2-1.8-5.5 0-6.5 1.8 1 1.8 4.3 0 6.5Z" transform="rotate(144 12 12)"/><path d="M12 9.5c-1.8-2.2-1.8-5.5 0-6.5 1.8 1 1.8 4.3 0 6.5Z" transform="rotate(216 12 12)"/><path d="M12 9.5c-1.8-2.2-1.8-5.5 0-6.5 1.8 1 1.8 4.3 0 6.5Z" transform="rotate(288 12 12)"/>'
   ),
+  // Filled five-petal flower for the header, echoing the app icon.
+  logo: `<svg viewBox="0 0 24 24"><g fill="currentColor"><circle cx="12" cy="6.2" r="4" transform="rotate(0 12 12)"/><circle cx="12" cy="6.2" r="4" transform="rotate(72 12 12)"/><circle cx="12" cy="6.2" r="4" transform="rotate(144 12 12)"/><circle cx="12" cy="6.2" r="4" transform="rotate(216 12 12)"/><circle cx="12" cy="6.2" r="4" transform="rotate(288 12 12)"/></g><circle cx="12" cy="12" r="2.6" fill="#fff"/></svg>`,
   refresh: svg('<path d="M20 12a8 8 0 1 1-2.3-5.7L20 8.5"/><path d="M20 4v4.5h-4.5"/>'),
 };

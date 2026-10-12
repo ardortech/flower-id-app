@@ -25,8 +25,8 @@ export const mockResult = {
     aliases: ['三角梅', '紙花', '葉子花'],
     scientificName: 'Bougainvillea spectabilis',
     family: '紫茉莉科・九重葛屬',
-    floweringSeason: '天氣溫暖時幾乎一年四季都會開，冬天到春天開得最熱鬧。',
-    origin: '老家在南美洲的巴西，很早就被帶到台灣種植。',
+    floweringSeason: '幾乎全年可見，秋冬到春天最盛',
+    origin: '南美洲（巴西）',
     howToRecognize:
       '我們看到的鮮豔「花瓣」其實是三片薄薄的苞片，像紙一樣。真正的花在苞片中間，是三朵小小的白色管狀花。枝條上有尖刺，常常爬滿圍牆或棚架。',
     flowerMeaning: '熱情、堅韌，代表努力不懈、越挫越勇的精神。',
