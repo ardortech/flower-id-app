@@ -5,6 +5,9 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+  # sharp has a native binary that esbuild can't bundle; ship it as-is.
+  external_node_modules = ["sharp"]
+  included_files = ["node_modules/sharp/**", "node_modules/@img/**"]
 
 [build.environment]
   NODE_VERSION = "22"
