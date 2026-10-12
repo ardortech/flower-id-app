@@ -1,8 +1,8 @@
-import { createStore, set, get, values } from 'idb-keyval';
+import { createStore, set, get, update, values } from 'idb-keyval';
 
 // 我的花朵日記: one IndexedDB record per saved flower, kept on this phone only.
 // { id, savedAt, takenAt, source, photo: Blob (the resized JPEG), result: { confidence, info, candidates },
-//   place: { name, lat, lng } | null }  (place is filled in by step 6)
+//   place: { name, lat, lng } | null }  (lat/lng are null for a place she typed)
 const store = createStore('flower-diary', 'entries');
 
 export async function addEntry({ photo, result, takenAt, source, place = null }) {
@@ -23,6 +23,11 @@ export async function addEntry({ photo, result, takenAt, source, place = null })
 }
 
 export const getEntry = (id) => get(id, store);
+
+// The place can arrive after she saved (e.g. she answered 「這張是在這裡拍的嗎？」 later).
+export async function setEntryPlace(id, place) {
+  await update(id, (entry) => (entry ? { ...entry, place } : entry), store);
+}
 
 // Newest first.
 export async function listEntries() {

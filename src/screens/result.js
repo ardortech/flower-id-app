@@ -70,12 +70,15 @@ function saveButton(saved, onSave) {
 // onOthers is set when there are other candidates to compare (「不太像？看看其他可能」).
 // onSave adds this flower to the diary (saved: already there). onShare is set only
 // for photos taken in the app, which aren't in her album yet (「存到相簿」).
-export function resultScreen({ result, photoUrl, takenAt, place, saved, onSave, onShare, onBack, onAgain, onOthers }) {
+// place: { name, lat, lng } | null; placePending shows 「正在記錄地點…」 until
+// screen.setPlace(place) is called.
+export function resultScreen({ result, photoUrl, takenAt, place, placePending = false, saved, onSave, onShare, onBack, onAgain, onOthers }) {
   const { info = {}, confidence = 0 } = result;
+  const placeLine = placeLineFor(place, placePending);
   const aliases = (info.aliases || []).filter(Boolean);
   const tableFields = TABLE_FIELDS.filter((key) => info[key]);
 
-  return h(
+  const screen = h(
     'section',
     { class: 'screen screen-result' },
     backBar(onBack),
@@ -88,12 +91,7 @@ export function resultScreen({ result, photoUrl, takenAt, place, saved, onSave, 
       info.scientificName && h('p', { class: 'scientific-name', lang: 'la' }, info.scientificName),
       aliases.length > 0 &&
         h('p', { class: 'aliases' }, t('result.aliases', { names: aliases.join(t('result.aliasSeparator')) })),
-      h(
-        'div',
-        { class: `meta${place ? ' has-place' : ''}` },
-        place && h('p', { class: 'meta-place' }, icon(icons.pin), place),
-        h('p', { class: 'meta-date' }, t('result.identifiedAt', { date: formatDate(takenAt) }))
-      )
+      h('div', { class: 'meta' }, placeLine.el, h('p', { class: 'meta-date' }, t('result.identifiedAt', { date: formatDate(takenAt) })))
     ),
     tableFields.length > 0 &&
       h(
@@ -123,7 +121,27 @@ export function resultScreen({ result, photoUrl, takenAt, place, saved, onSave, 
       'footer',
       { class: 'result-footer' },
       h('p', { class: 'small-print' }, t('result.disclaimer')),
-      h('p', { class: 'small-print' }, t('result.attribution'))
+      h('p', { class: 'small-print' }, t('result.attribution')),
+      placeLine.attribution
     )
   );
+  screen.setPlace = placeLine.set;
+  return screen;
+}
+
+// 📍 line under the name. place: { name, lat, lng } | null; pending while we're
+// still finding out. Coordinates mean the name came from OpenStreetMap, which
+// asks for credit.
+function placeLineFor(place, pending) {
+  const text = h('span');
+  const el = h('p', { class: 'meta-place' }, icon(icons.pin), text);
+  const attribution = h('p', { class: 'small-print' }, t('result.placeAttribution'));
+  const set = (value, stillPending = false) => {
+    const known = Boolean(value?.name);
+    text.textContent = known ? value.name : t(stillPending ? 'result.placeFinding' : 'result.noPlace');
+    el.classList.toggle('meta-place-none', !known);
+    attribution.hidden = !(known && value.lat != null);
+  };
+  set(place, pending);
+  return { el, attribution, set };
 }

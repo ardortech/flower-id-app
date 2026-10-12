@@ -9,7 +9,9 @@ import { resultScreen } from './screens/result.js';
 import { errorScreen } from './screens/error.js';
 import { candidatesScreen } from './screens/candidates.js';
 import { diaryScreen } from './screens/diary.js';
-import { addEntry, getEntry, listEntries, countKinds } from './diary.js';
+import { showPlaceSheet } from './screens/place-sheet.js';
+import { addEntry, getEntry, setEntryPlace, listEntries, countKinds } from './diary.js';
+import { currentPosition, photoPosition, placeAt } from './location.js';
 import { photoFile, canSharePhoto, sharePhoto } from './share.js';
 
 const LOW_CONFIDENCE = 0.5;
@@ -85,7 +87,10 @@ function abortRequest() {
 
 function reset() {
   abortRequest();
-  if (session) URL.revokeObjectURL(session.photoUrl);
+  if (session) {
+    session.closeSheet?.();
+    URL.revokeObjectURL(session.photoUrl);
+  }
   session = null;
 }
 
@@ -169,27 +174,32 @@ function showResult(state) {
     onOthers = state.viaList ? goBack : () => navigate({ screen: 'candidates', overResult: true, depth: state.depth + 1 });
   }
   const current = session;
-  show(
-    resultScreen({
-      result,
-      photoUrl: current.photoUrl,
-      takenAt: current.takenAt,
-      place: null,
-      saved: current.saved[pick] != null,
-      onSave: async () => {
-        current.saved[pick] = await addEntry({
-          photo: current.photo,
-          result: { confidence: result.confidence, info: result.info, candidates: current.candidates },
-          takenAt: current.takenAt,
-          source: current.source,
-        });
-      },
-      onShare: shareAction(current.source, current.photo),
-      onBack: goBack,
-      onAgain: pickAlbum,
-      onOthers,
-    })
-  );
+  current.screen = resultScreen({
+    result,
+    photoUrl: current.photoUrl,
+    takenAt: current.takenAt,
+    place: current.place,
+    placePending: current.placePending,
+    saved: current.saved[pick] != null,
+    onSave: async () => {
+      const pending = current.placePending;
+      const id = await addEntry({
+        photo: current.photo,
+        result: { confidence: result.confidence, info: result.info, candidates: current.candidates },
+        takenAt: current.takenAt,
+        source: current.source,
+        place: current.place,
+      });
+      current.saved[pick] = id;
+      // The place turned up while we were saving.
+      if (pending && !current.placePending) await setEntryPlace(id, current.place);
+    },
+    onShare: shareAction(current.source, current.photo),
+    onBack: goBack,
+    onAgain: pickAlbum,
+    onOthers,
+  });
+  show(current.screen);
 }
 
 // 「存到相簿」 only for photos taken in the app: album photos are already in Photos.
@@ -228,7 +238,7 @@ async function showEntry(state) {
       result: entry.result,
       photoUrl,
       takenAt: new Date(entry.takenAt),
-      place: entry.place?.name || null,
+      place: entry.place,
       saved: true,
       onShare: shareAction(entry.source, entry.photo),
       onBack: goBack,
@@ -266,7 +276,7 @@ async function startIdentify(file, source) {
 
   const photo = await shrinkPhoto(file);
   if (controller.signal.aborted) return;
-  session = {
+  const current = (session = {
     id: nextSessionId++,
     photo,
     photoUrl: URL.createObjectURL(photo),
@@ -275,7 +285,10 @@ async function startIdentify(file, source) {
     candidates: [],
     results: [],
     saved: [], // saved[i]: diary entry id once results[i] is in the diary
-  };
+    place: null, // { name, lat, lng } once known
+    placePending: true,
+  });
+  findPlace(current, file);
 
   // Reuse the current entry if we're already past Home; entries below it belong
   // to the old photo and send her Home if she goes back to them.
@@ -294,6 +307,7 @@ async function startIdentify(file, source) {
     }
   } catch (err) {
     if (err.name === 'AbortError') return;
+    session.closeSheet?.();
     history.replaceState({ screen: 'error', sid: session.id, depth }, '');
     show(errorScreen({ code: err.code, photoUrl: session.photoUrl, onHome: goHome, onRetry: pickAlbum }));
   } finally {
@@ -306,6 +320,34 @@ function navigateLoading(depth) {
   if (history.state?.screen) history.replaceState(state, '');
   else history.pushState(state, '');
   show(loadingScreen({ photoUrl: session.photoUrl, onCancel: goHome }));
+}
+
+// Where the photo was taken. Runs alongside identification and never holds
+// it up: whatever fails, the flower just has no place (same as 略過).
+async function findPlace(current, file) {
+  if (current.source === 'camera') {
+    // She just tapped 「現在拍照」, so she's standing where she took it.
+    return setPlace(current, await placeAt(await currentPosition()));
+  }
+  const coords = await photoPosition(file);
+  if (coords) return setPlace(current, await placeAt(coords));
+  if (session !== current) return;
+  current.closeSheet = showPlaceSheet({
+    onAnswer: async (answer) => {
+      if (answer.kind === 'here') setPlace(current, await placeAt(await currentPosition()));
+      else if (answer.kind === 'typed') setPlace(current, { name: answer.name, lat: null, lng: null });
+      else setPlace(current, null);
+    },
+  });
+}
+
+function setPlace(current, place) {
+  current.place = place;
+  current.placePending = false;
+  if (current.screen?.isConnected) current.screen.setPlace(place);
+  for (const id of current.saved) {
+    if (id != null) setEntryPlace(id, place).catch((err) => console.warn('diary place update failed', err));
+  }
 }
 
 // Start where history says (e.g. the diary after a reload); session screens fall back to Home.

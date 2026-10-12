@@ -24,7 +24,7 @@ Every design decision should favour simplicity, large text and large tap targets
 
 ## Stack
 - Frontend: Vite + vanilla JavaScript (no framework), plain CSS. Keep dependencies minimal.
-- Backend: one Netlify Function, `netlify/functions/identify.js`.
+- Backend: Netlify Functions: `netlify/functions/identify.js` (identification) and `netlify/functions/place.js` (`GET /api/place?lat&lng&lang`, reverse geocoding).
 - Hosting: Netlify, deployed from the GitHub repo.
 - Local storage: IndexedDB (via `idb-keyval`) for the flower diary. No login, no database in v1.
 
@@ -32,7 +32,7 @@ Every design decision should favour simplicity, large text and large tap targets
 Set as Netlify environment variables:
 - `PLANTNET_API_KEY` — from my.plantnet.org (free tier: 500 identifications/day)
 - `ANTHROPIC_API_KEY` — from console.anthropic.com
-- `MOCK_IDENTIFY=1` — when set, the function returns a canned result without calling any API (use for development and tests). `MOCK_IDENTIFY=low` returns a low-confidence result (top 3 screen); `MOCK_IDENTIFY=no_plant` returns the no_plant error.
+- `MOCK_IDENTIFY=1` — when set, the function returns a canned result without calling any API (use for development and tests). `MOCK_IDENTIFY=low` returns a low-confidence result (top 3 screen); `MOCK_IDENTIFY=no_plant` returns the no_plant error. While it is set, `/api/place` also returns a canned place instead of calling Nominatim.
 
 ## Identification flow (`/api/identify`, POST multipart: image, lang, optional lat/lng, optional species)
 1. Accept JPEG/PNG/HEIC. Resize so the long edge is ≤1200px, re-encode as JPEG.
@@ -64,7 +64,7 @@ Tell Claude to write warmly and simply, for an older reader, with no jargon. If 
 ## Screens (match the Design mockup)
 1. 首頁 Home — big pink 「從相簿選照片」 (primary), outlined 「現在拍照」, 「最近認識的花」 strip, 「看全部 ›」 → Diary.
 2. 辨識中 Loading — her photo, 「正在認識這朵花…」, 取消.
-3. 辨識結果 Result — confidence badge, name (large serif), scientific name, aliases, 📍 place + date/time, info card, 「要小心」 toxicity box, 「唸給我聽」 (speechSynthesis, zh-TW voice), 「加入我的花朵日記」, 「存到相簿」, 「不太像？看看其他可能 ›」, disclaimer 「辨識結果僅供參考，請勿據此判斷能否食用」, footer 「辨識技術：Pl@ntNet」 (required attribution).
+3. 辨識結果 Result — confidence badge, name (large serif), scientific name, aliases, 📍 place + date/time, info card, 「要小心」 toxicity box, 「加入我的花朵日記」, 「存到相簿」, 「不太像？看看其他可能 ›」, disclaimer 「辨識結果僅供參考，請勿據此判斷能否食用」, footer 「辨識技術：Pl@ntNet」 (required attribution).
 4. 不太確定時 — shown when top score < 50%: top 3 with Pl@ntNet reference photos, score bars, 「就是 X」 buttons, retake tip.
 5. 我的花朵日記 Diary — 2-column grid: photo, name, place, date.
 
@@ -76,7 +76,7 @@ Tell Claude to write warmly and simply, for an older reader, with no jargon. If 
 
 ## Feature details
 - **Save to album**: iOS web apps cannot write to Photos. Only for photos taken in-app, show 「存到相簿」, which calls `navigator.share({ files: [photo] })` so she can tap 儲存影像.
-- **Location**: in-app camera → `navigator.geolocation`. Album photo → try EXIF GPS with `exifr`; if missing, ask 「這張是在這裡拍的嗎？」 (是 / 輸入地點 / 略過). Reverse-geocode to a zh-TW place name (e.g. OpenStreetMap Nominatim with accept-language=zh-TW, with a proper User-Agent, respecting its usage policy). Store place name + coordinates in the diary.
+- **Location**: in-app camera → `navigator.geolocation` (only after she taps, never on app start). Album photo → try EXIF GPS with `exifr` (console logs whether it was found); if missing, a bottom sheet asks 「這張是在這裡拍的嗎？」 (是 / 輸入地點 / 略過). Reverse-geocode via `/api/place` → OpenStreetMap Nominatim (accept-language=zh-TW, User-Agent with https://flower.klchang.com.tw, max 1 request/second, results cached) to a short name like 「台北市大安區・大安森林公園附近」. Show it with a pin under the name on Result and on each diary card; 「未記錄地點」 when there is none. Store place name + coordinates in the diary (typed places have no coordinates). Permission denied or any failure never blocks the result; it counts as 略過. Credit 「地點資料：© OpenStreetMap 貢獻者」 when a name came from OSM.
 - **Diary**: store photo (resized), result JSON, place, timestamp in IndexedDB.
 
 ## i18n
@@ -88,8 +88,8 @@ zh-TW only for now, English later. All UI strings live in `src/locales/zh-TW.jso
 - [x] 3. Real Netlify Function: resize → Pl@ntNet → Claude → JSON
 - [x] 4. Low-confidence screen (top 3)
 - [x] 5. Diary (IndexedDB) + Save to album
-- [ ] 6. Location (geolocation, EXIF, ask, reverse geocode)
-- [ ] 7. Read aloud
+- [x] 6. Location (geolocation, EXIF, ask, reverse geocode)
+- [ ] ~~7. Read aloud~~ (skipped)
 - [ ] Later: iOS Share-sheet Shortcut 「認識這朵花」, English, flower map
 
 ## Working rules
