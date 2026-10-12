@@ -32,14 +32,16 @@ Every design decision should favour simplicity, large text and large tap targets
 Set as Netlify environment variables:
 - `PLANTNET_API_KEY` — from my.plantnet.org (free tier: 500 identifications/day)
 - `ANTHROPIC_API_KEY` — from console.anthropic.com
-- `MOCK_IDENTIFY=1` — when set, the function returns a canned result without calling any API (use for development and tests)
+- `MOCK_IDENTIFY=1` — when set, the function returns a canned result without calling any API (use for development and tests). `MOCK_IDENTIFY=low` returns a low-confidence result (top 3 screen); `MOCK_IDENTIFY=no_plant` returns the no_plant error.
 
-## Identification flow (`/api/identify`, POST multipart: image, lang, optional lat/lng)
+## Identification flow (`/api/identify`, POST multipart: image, lang, optional lat/lng, optional species)
 1. Accept JPEG/PNG/HEIC. Resize so the long edge is ≤1200px, re-encode as JPEG.
 2. Call Pl@ntNet identify (`/v2/identify/all`, organs=auto or flower). Check the current API docs for exact parameters. Keep the top 3 results: scientific name, score, reference image URLs.
+   Each candidate sent to the browser: `{ scientificName, commonName, score, images: [url, …] }` — `commonName` in `lang` (Taiwan usage, from Claude), `images` are Pl@ntNet reference photo URLs (medium size).
 3. Call the Claude API (Messages API, vision) with the photo and the top Pl@ntNet match. Check the current docs for the model ID; use a Sonnet-class model. Ask for JSON only, in the requested `lang` (default zh-TW), using names commonly used in Taiwan.
 4. Return `{ confidence, candidates: [...top 3], info: {...} }` to the browser.
 5. If Pl@ntNet finds no plant, return a friendly error code; the UI shows 「看不太清楚，靠近花朵再拍一次」.
+6. With `species` (a candidate's scientificName, sent when she taps 「就是 X」 on a candidate other than the top one): skip Pl@ntNet, ask Claude about that species with the photo, return `{ info }` only.
 
 ### `info` JSON schema (keys in English, values in `lang`)
 ```json
@@ -84,7 +86,7 @@ zh-TW only for now, English later. All UI strings live in `src/locales/zh-TW.jso
 - [x] 1. Scaffold Vite app, PWA manifest + icons, Netlify config, locale file
 - [x] 2. Home + album picker + Loading + Result screens with `MOCK_IDENTIFY=1`
 - [ ] 3. Real Netlify Function: resize → Pl@ntNet → Claude → JSON
-- [ ] 4. Low-confidence screen (top 3)
+- [x] 4. Low-confidence screen (top 3)
 - [ ] 5. Diary (IndexedDB) + Save to album
 - [ ] 6. Location (geolocation, EXIF, ask, reverse geocode)
 - [ ] 7. Read aloud

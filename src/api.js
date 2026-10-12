@@ -7,12 +7,14 @@ export class IdentifyError extends Error {
   }
 }
 
-// Returns { confidence, candidates, info }. Throws IdentifyError with a code
+// Returns { confidence, candidates, info }, or just { info } when `species`
+// (a candidate's scientificName) is given. Throws IdentifyError with a code
 // ('no_plant', 'offline', or a server code) the UI turns into a friendly message.
-export async function identify(photo, { signal } = {}) {
+export async function identify(photo, { signal, species } = {}) {
   const body = new FormData();
   body.append('image', photo);
   body.append('lang', lang);
+  if (species) body.append('species', species);
 
   let res;
   try {
